@@ -1,8 +1,10 @@
 import * as tf from '@tensorflow/tfjs';
 
-// This is a placeholder for the Teachable Machine integration
-// Users will replace the MODEL_URL with their actual model URL from Teachable Machine
-const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/YOUR_MODEL_URL/';
+// ====================================
+// INSERT YOUR TEACHABLE MACHINE MODEL URL HERE
+// ====================================
+// Export your model from Teachable Machine as "TensorFlow.js" and paste the URL below
+const MODEL_URL = ''; // Paste your model URL here
 
 interface Prediction {
   className: string;
@@ -14,13 +16,12 @@ export class ArtClassifier {
   private isLoaded = false;
 
   async loadModel(): Promise<void> {
+    if (!MODEL_URL) {
+      throw new Error('Please set your Teachable Machine model URL in src/lib/teachableMachine.ts');
+    }
+
     try {
-      // For demo purposes, we'll simulate a model
-      // In real implementation, uncomment the line below and replace MODEL_URL
-      // this.model = await tf.loadLayersModel(MODEL_URL + 'model.json');
-      
-      // Simulate loading time
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      this.model = await tf.loadLayersModel(MODEL_URL + 'model.json');
       this.isLoaded = true;
       console.log('Model loaded successfully');
     } catch (error) {
@@ -35,18 +36,23 @@ export class ArtClassifier {
     }
 
     try {
-      // For demo purposes, we'll return a mock prediction
-      // In real implementation, replace this with actual model prediction
-      const predictions = await this.mockPrediction(imageElement);
+      if (!this.model) {
+        throw new Error('Model not loaded');
+      }
+
+      const prediction = this.model.predict(this.preprocessImage(imageElement)) as tf.Tensor;
+      const scores = await prediction.data();
       
-      // Real implementation would be:
-      // const predictions = await this.model!.predict(this.preprocessImage(imageElement));
+      // Get the class names from your model (update these to match your Teachable Machine labels)
+      const classNames = ['Real Art', 'AI Art'];
       
-      const topPrediction = predictions[0];
+      // Find the prediction with highest confidence
+      const maxScoreIndex = scores.indexOf(Math.max(...Array.from(scores)));
+      const confidence = scores[maxScoreIndex];
       
       return {
-        label: topPrediction.className,
-        confidence: topPrediction.probability
+        label: classNames[maxScoreIndex],
+        confidence: confidence
       };
     } catch (error) {
       console.error('Error classifying image:', error);
@@ -54,27 +60,10 @@ export class ArtClassifier {
     }
   }
 
-  private async mockPrediction(imageElement: HTMLImageElement): Promise<Prediction[]> {
-    // Mock prediction for demo - randomly classify as Real Art or AI Art
-    const isRealArt = Math.random() > 0.5;
-    const confidence = 0.7 + Math.random() * 0.25; // Random confidence between 70-95%
-    
-    return [
-      {
-        className: isRealArt ? 'Real Art' : 'AI Art',
-        probability: confidence
-      },
-      {
-        className: isRealArt ? 'AI Art' : 'Real Art',  
-        probability: 1 - confidence
-      }
-    ];
-  }
-
   private preprocessImage(imageElement: HTMLImageElement): tf.Tensor {
-    // Preprocess image for the model (resize, normalize, etc.)
+    // Preprocess image for Teachable Machine model
     return tf.browser.fromPixels(imageElement)
-      .resizeNearestNeighbor([224, 224]) // Typical input size for image classification
+      .resizeNearestNeighbor([224, 224]) // Standard size for Teachable Machine
       .toFloat()
       .div(255.0)
       .expandDims();
