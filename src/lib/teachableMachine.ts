@@ -4,7 +4,7 @@ import * as tf from '@tensorflow/tfjs';
 // INSERT YOUR TEACHABLE MACHINE MODEL URL HERE
 // ====================================
 // Export your model from Teachable Machine as "TensorFlow.js" and paste the URL below
-const MODEL_URL = ''; // Paste your model URL here
+const MODEL_URL = 'teachablemachine.withgoogle.com/models/qWR-7homH/'; // Paste your model URL here
 
 interface Prediction {
   className: string;
